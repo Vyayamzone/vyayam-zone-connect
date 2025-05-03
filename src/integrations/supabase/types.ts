@@ -9,16 +9,156 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      trainer_profiles: {
+        Row: {
+          age: number | null
+          availability_timings: string[] | null
+          career_motivation: string | null
+          certification_files: string[] | null
+          city: string | null
+          created_at: string
+          full_name: string
+          gender: Database["public"]["Enums"]["gender_type"] | null
+          govt_id_file: string | null
+          id: string
+          offers_home_visits: boolean | null
+          offers_online_sessions: boolean | null
+          phone: string | null
+          services_offered: string[] | null
+          updated_at: string
+          years_experience: number | null
+        }
+        Insert: {
+          age?: number | null
+          availability_timings?: string[] | null
+          career_motivation?: string | null
+          certification_files?: string[] | null
+          city?: string | null
+          created_at?: string
+          full_name: string
+          gender?: Database["public"]["Enums"]["gender_type"] | null
+          govt_id_file?: string | null
+          id: string
+          offers_home_visits?: boolean | null
+          offers_online_sessions?: boolean | null
+          phone?: string | null
+          services_offered?: string[] | null
+          updated_at?: string
+          years_experience?: number | null
+        }
+        Update: {
+          age?: number | null
+          availability_timings?: string[] | null
+          career_motivation?: string | null
+          certification_files?: string[] | null
+          city?: string | null
+          created_at?: string
+          full_name?: string
+          gender?: Database["public"]["Enums"]["gender_type"] | null
+          govt_id_file?: string | null
+          id?: string
+          offers_home_visits?: boolean | null
+          offers_online_sessions?: boolean | null
+          phone?: string | null
+          services_offered?: string[] | null
+          updated_at?: string
+          years_experience?: number | null
+        }
+        Relationships: []
+      }
+      user_profiles: {
+        Row: {
+          age: number | null
+          city: string | null
+          created_at: string
+          experience_level:
+            | Database["public"]["Enums"]["experience_level"]
+            | null
+          fitness_goals: string[] | null
+          full_name: string
+          gender: Database["public"]["Enums"]["gender_type"] | null
+          health_conditions: string | null
+          id: string
+          phone: string | null
+          preferred_workout_type: string | null
+          time_preference: Database["public"]["Enums"]["time_preference"] | null
+          updated_at: string
+        }
+        Insert: {
+          age?: number | null
+          city?: string | null
+          created_at?: string
+          experience_level?:
+            | Database["public"]["Enums"]["experience_level"]
+            | null
+          fitness_goals?: string[] | null
+          full_name: string
+          gender?: Database["public"]["Enums"]["gender_type"] | null
+          health_conditions?: string | null
+          id: string
+          phone?: string | null
+          preferred_workout_type?: string | null
+          time_preference?:
+            | Database["public"]["Enums"]["time_preference"]
+            | null
+          updated_at?: string
+        }
+        Update: {
+          age?: number | null
+          city?: string | null
+          created_at?: string
+          experience_level?:
+            | Database["public"]["Enums"]["experience_level"]
+            | null
+          fitness_goals?: string[] | null
+          full_name?: string
+          gender?: Database["public"]["Enums"]["gender_type"] | null
+          health_conditions?: string | null
+          id?: string
+          phone?: string | null
+          preferred_workout_type?: string | null
+          time_preference?:
+            | Database["public"]["Enums"]["time_preference"]
+            | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: { _user_id: string; _role: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      experience_level: "beginner" | "intermediate" | "advanced"
+      gender_type: "male" | "female" | "other" | "prefer_not_to_say"
+      time_preference: "morning" | "afternoon" | "evening" | "flexible"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +273,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      experience_level: ["beginner", "intermediate", "advanced"],
+      gender_type: ["male", "female", "other", "prefer_not_to_say"],
+      time_preference: ["morning", "afternoon", "evening", "flexible"],
+    },
   },
 } as const

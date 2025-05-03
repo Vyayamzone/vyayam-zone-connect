@@ -91,12 +91,6 @@ const LoginForm = ({ onToggleForm }: LoginFormProps) => {
               Sign up
             </button>
           </p>
-          <div className="text-xs text-muted-foreground text-center">
-            <p>Demo accounts:</p>
-            <p>user@example.com / password</p>
-            <p>trainer@example.com / password</p>
-            <p>admin@example.com / password</p>
-          </div>
         </CardFooter>
       </form>
     </Card>
