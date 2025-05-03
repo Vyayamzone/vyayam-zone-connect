@@ -84,10 +84,10 @@ const Navbar = () => {
                 </DropdownMenu>
               ) : (
                 <>
-                  <AuthModal variant="outline">
+                  <AuthModal variant="outline" mode="login">
                     <Button variant="outline">Login</Button>
                   </AuthModal>
-                  <AuthModal>
+                  <AuthModal mode="signup">
                     <Button>Sign Up</Button>
                   </AuthModal>
                 </>
@@ -134,10 +134,10 @@ const Navbar = () => {
                 </>
               ) : (
                 <div className="flex flex-col space-y-2">
-                  <AuthModal>
+                  <AuthModal mode="signup">
                     <Button className="w-full">Sign Up</Button>
                   </AuthModal>
-                  <AuthModal variant="outline">
+                  <AuthModal mode="login" variant="outline">
                     <Button variant="outline" className="w-full">Login</Button>
                   </AuthModal>
                 </div>

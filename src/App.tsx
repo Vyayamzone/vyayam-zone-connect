@@ -14,6 +14,9 @@ import Auth from "./pages/Auth";
 import UserDashboard from "./pages/UserDashboard";
 import TrainerDashboard from "./pages/TrainerDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import SignupRoleSelect from "./pages/SignupRoleSelect";
+import UserSignup from "./pages/UserSignup";
+import TrainerSignup from "./pages/TrainerSignup";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +31,9 @@ const App = () => (
             {/* Public Routes */}
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/signup-role-select" element={<SignupRoleSelect />} />
+            <Route path="/signup/user" element={<UserSignup />} />
+            <Route path="/signup/trainer" element={<TrainerSignup />} />
 
             {/* Protected User Routes */}
             <Route element={<ProtectedRoute allowedRoles={["user"]} />}>
