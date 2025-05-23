@@ -19,7 +19,8 @@ import {
   CheckCircle, 
   XCircle,
   Eye,
-  Plus
+  Plus,
+  Clock
 } from 'lucide-react';
 
 interface PlatformStats {
@@ -53,10 +54,10 @@ interface UserInterest {
   user_profiles: {
     full_name: string;
     city: string;
-  };
+  } | null;
   trainer_profiles: {
     full_name: string;
-  };
+  } | null;
 }
 
 const AdminDashboard = () => {
@@ -117,18 +118,21 @@ const AdminDashboard = () => {
         setTrainerApplications(applications);
       }
 
-      // Fetch user interests
+      // Fetch user interests with proper joins
       const { data: interests } = await supabase
         .from('user_interests')
         .select(`
-          *,
-          user_profiles (full_name, city),
-          trainer_profiles (full_name)
+          id,
+          message,
+          status,
+          created_at,
+          user_profiles!user_interests_user_id_fkey (full_name, city),
+          trainer_profiles!user_interests_trainer_id_fkey (full_name)
         `)
         .order('created_at', { ascending: false });
 
       if (interests) {
-        setUserInterests(interests);
+        setUserInterests(interests as UserInterest[]);
       }
 
     } catch (error) {
@@ -410,11 +414,11 @@ const AdminDashboard = () => {
                     <div key={interest.id} className="border rounded-lg p-4 bg-white">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h3 className="font-semibold">{interest.user_profiles?.full_name}</h3>
+                          <h3 className="font-semibold">{interest.user_profiles?.full_name || 'Unknown User'}</h3>
                           <p className="text-sm text-gray-600">
-                            Interested in: {interest.trainer_profiles?.full_name}
+                            Interested in: {interest.trainer_profiles?.full_name || 'Unknown Trainer'}
                           </p>
-                          <p className="text-sm text-gray-500">{interest.user_profiles?.city}</p>
+                          <p className="text-sm text-gray-500">{interest.user_profiles?.city || 'City not specified'}</p>
                           {interest.message && (
                             <p className="text-sm text-gray-700 mt-2">{interest.message}</p>
                           )}

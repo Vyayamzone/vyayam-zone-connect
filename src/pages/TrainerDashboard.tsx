@@ -36,7 +36,7 @@ interface UserInterest {
     full_name: string;
     phone: string;
     city: string;
-  };
+  } | null;
 }
 
 interface TrainingSession {
@@ -47,7 +47,7 @@ interface TrainingSession {
   amount: number;
   user_profiles: {
     full_name: string;
-  };
+  } | null;
 }
 
 const TrainerDashboard = () => {
@@ -76,12 +76,16 @@ const TrainerDashboard = () => {
         setStats(statsData[0]);
       }
 
-      // Fetch user interests
+      // Fetch user interests with proper join to user_profiles
       const { data: interestsData } = await supabase
         .from('user_interests')
         .select(`
-          *,
-          user_profiles (
+          id,
+          user_id,
+          message,
+          status,
+          created_at,
+          user_profiles!user_interests_user_id_fkey (
             full_name,
             phone,
             city
@@ -91,15 +95,19 @@ const TrainerDashboard = () => {
         .order('created_at', { ascending: false });
 
       if (interestsData) {
-        setInterests(interestsData);
+        setInterests(interestsData as UserInterest[]);
       }
 
-      // Fetch training sessions
+      // Fetch training sessions with proper join to user_profiles
       const { data: sessionsData } = await supabase
         .from('training_sessions')
         .select(`
-          *,
-          user_profiles (
+          id,
+          session_type,
+          mode,
+          session_date,
+          amount,
+          user_profiles!training_sessions_user_id_fkey (
             full_name
           )
         `)
@@ -108,7 +116,7 @@ const TrainerDashboard = () => {
         .limit(10);
 
       if (sessionsData) {
-        setSessions(sessionsData);
+        setSessions(sessionsData as TrainingSession[]);
       }
 
     } catch (error) {
@@ -254,9 +262,9 @@ const TrainerDashboard = () => {
                       <div key={interest.id} className="border rounded-lg p-4 bg-white">
                         <div className="flex justify-between items-start mb-2">
                           <div>
-                            <h3 className="font-semibold">{interest.user_profiles?.full_name}</h3>
-                            <p className="text-sm text-gray-600">{interest.user_profiles?.city}</p>
-                            <p className="text-sm text-gray-600">{interest.user_profiles?.phone}</p>
+                            <h3 className="font-semibold">{interest.user_profiles?.full_name || 'Unknown User'}</h3>
+                            <p className="text-sm text-gray-600">{interest.user_profiles?.city || 'City not specified'}</p>
+                            <p className="text-sm text-gray-600">{interest.user_profiles?.phone || 'Phone not provided'}</p>
                           </div>
                           <Badge variant={
                             interest.status === 'pending' ? 'default' :
@@ -307,7 +315,7 @@ const TrainerDashboard = () => {
                       <div key={session.id} className="border rounded-lg p-4 bg-white">
                         <div className="flex justify-between items-start">
                           <div>
-                            <h3 className="font-semibold">{session.user_profiles?.full_name}</h3>
+                            <h3 className="font-semibold">{session.user_profiles?.full_name || 'Unknown User'}</h3>
                             <p className="text-sm text-gray-600">
                               {session.session_type} - {session.mode}
                             </p>

@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/signup-role-select" element={<SignupRoleSelect />} />
             <Route path="/signup/user" element={<UserSignup />} />
             <Route path="/signup/trainer" element={<TrainerSignup />} />
+            <Route path="/trainer-under-review" element={<TrainerUnderReview />} />
 
             {/* Protected User Routes */}
             <Route element={<ProtectedRoute allowedRoles={["user"]} />}>
