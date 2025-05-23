@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,7 +42,6 @@ interface TrainerApplication {
   services_offered: string[];
   years_experience: number;
   career_motivation: string;
-  status: string;
   created_at: string;
 }
 
@@ -52,6 +52,13 @@ interface UserInterest {
   created_at: string;
   user_id: string;
   trainer_id: string;
+  user_profiles?: {
+    full_name: string;
+    city: string;
+  } | null;
+  trainer_profiles?: {
+    full_name: string;
+  } | null;
 }
 
 const AdminDashboard = () => {
@@ -61,7 +68,6 @@ const AdminDashboard = () => {
   const [trainerApplications, setTrainerApplications] = useState<TrainerApplication[]>([]);
   const [userInterests, setUserInterests] = useState<UserInterest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedApplication, setSelectedApplication] = useState<TrainerApplication | null>(null);
 
   // Session form state
   const [sessionForm, setSessionForm] = useState({
@@ -82,20 +88,18 @@ const AdminDashboard = () => {
     try {
       // Fetch platform stats
       const [trainersData, usersData, sessionsData] = await Promise.all([
-        supabase.from('trainer_profiles').select('status'),
+        supabase.from('trainer_profiles').select('id'),
         supabase.from('user_profiles').select('id'),
         supabase.from('training_sessions').select('amount')
       ]);
 
       if (trainersData.data && usersData.data && sessionsData.data) {
-        const pendingTrainers = trainersData.data.filter(t => t.status === 'pending').length;
-        const approvedTrainers = trainersData.data.filter(t => t.status === 'approved').length;
         const totalRevenue = sessionsData.data.reduce((sum, session) => sum + Number(session.amount), 0);
 
         setStats({
           total_trainers: trainersData.data.length,
-          pending_trainers: pendingTrainers,
-          approved_trainers: approvedTrainers,
+          pending_trainers: 0, // No status column anymore
+          approved_trainers: trainersData.data.length,
           total_users: usersData.data.length,
           total_sessions: sessionsData.data.length,
           total_revenue: totalRevenue
@@ -154,38 +158,6 @@ const AdminDashboard = () => {
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const updateTrainerStatus = async (trainerId: string, status: string) => {
-    try {
-      const { error } = await supabase
-        .from('trainer_profiles')
-        .update({ status })
-        .eq('id', trainerId);
-
-      if (error) throw error;
-
-      setTrainerApplications(prev =>
-        prev.map(app =>
-          app.id === trainerId ? { ...app, status } : app
-        )
-      );
-
-      toast({
-        title: 'Success',
-        description: `Trainer ${status} successfully`,
-      });
-
-      // Refresh stats
-      fetchDashboardData();
-    } catch (error) {
-      console.error('Error updating trainer status:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to update trainer status',
-      });
     }
   };
 
@@ -361,12 +333,7 @@ const AdminDashboard = () => {
                             {application.years_experience} years experience
                           </p>
                         </div>
-                        <Badge variant={
-                          application.status === 'pending' ? 'default' :
-                          application.status === 'approved' ? 'default' : 'destructive'
-                        }>
-                          {application.status}
-                        </Badge>
+                        <Badge variant="default">Active</Badge>
                       </div>
                       
                       <div className="grid grid-cols-2 gap-4 mb-4">
@@ -384,26 +351,6 @@ const AdminDashboard = () => {
                         <div className="mb-4">
                           <p className="text-sm font-medium text-gray-600">Career Motivation</p>
                           <p className="text-sm text-gray-700">{application.career_motivation}</p>
-                        </div>
-                      )}
-
-                      {application.status === 'pending' && (
-                        <div className="flex gap-2">
-                          <Button 
-                            size="sm"
-                            onClick={() => updateTrainerStatus(application.id, 'approved')}
-                          >
-                            <CheckCircle className="w-4 h-4 mr-1" />
-                            Approve
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="destructive"
-                            onClick={() => updateTrainerStatus(application.id, 'rejected')}
-                          >
-                            <XCircle className="w-4 h-4 mr-1" />
-                            Reject
-                          </Button>
                         </div>
                       )}
                     </div>

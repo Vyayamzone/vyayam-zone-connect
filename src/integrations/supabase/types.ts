@@ -9,6 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admins: {
+        Row: {
+          created_at: string | null
+          email: string
+          full_name: string
+          id: string
+          last_login: string | null
+          password_hash: string
+          phone_number: string | null
+          role: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          full_name: string
+          id?: string
+          last_login?: string | null
+          password_hash: string
+          phone_number?: string | null
+          role?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          last_login?: string | null
+          password_hash?: string
+          phone_number?: string | null
+          role?: string | null
+        }
+        Relationships: []
+      }
       trainer_availability: {
         Row: {
           created_at: string
@@ -94,7 +127,6 @@ export type Database = {
           offers_online_sessions: boolean | null
           phone: string | null
           services_offered: string[] | null
-          status: string | null
           updated_at: string
           years_experience: number | null
         }
@@ -113,7 +145,6 @@ export type Database = {
           offers_online_sessions?: boolean | null
           phone?: string | null
           services_offered?: string[] | null
-          status?: string | null
           updated_at?: string
           years_experience?: number | null
         }
@@ -132,7 +163,6 @@ export type Database = {
           offers_online_sessions?: boolean | null
           phone?: string | null
           services_offered?: string[] | null
-          status?: string | null
           updated_at?: string
           years_experience?: number | null
         }
@@ -271,27 +301,6 @@ export type Database = {
         }
         Relationships: []
       }
-      user_roles: {
-        Row: {
-          created_at: string
-          id: string
-          role: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          role: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          role?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
@@ -305,10 +314,6 @@ export type Database = {
           total_earnings: number
           pending_interests: number
         }[]
-      }
-      has_role: {
-        Args: { _user_id: string; _role: string }
-        Returns: boolean
       }
     }
     Enums: {

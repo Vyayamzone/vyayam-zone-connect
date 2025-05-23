@@ -18,6 +18,7 @@ import SignupRoleSelect from "./pages/SignupRoleSelect";
 import UserSignup from "./pages/UserSignup";
 import TrainerSignup from "./pages/TrainerSignup";
 import TrainerUnderReview from "./pages/TrainerUnderReview";
+import Unauthorized from "./pages/Unauthorized";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/signup/user" element={<UserSignup />} />
             <Route path="/signup/trainer" element={<TrainerSignup />} />
             <Route path="/trainer-under-review" element={<TrainerUnderReview />} />
+            <Route path="/unauthorized" element={<Unauthorized />} />
 
             {/* Protected User Routes */}
             <Route element={<ProtectedRoute allowedRoles={["user"]} />}>
