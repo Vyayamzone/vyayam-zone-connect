@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -51,13 +50,8 @@ interface UserInterest {
   message: string;
   status: string;
   created_at: string;
-  user_profiles: {
-    full_name: string;
-    city: string;
-  } | null;
-  trainer_profiles: {
-    full_name: string;
-  } | null;
+  user_id: string;
+  trainer_id: string;
 }
 
 const AdminDashboard = () => {
@@ -118,7 +112,7 @@ const AdminDashboard = () => {
         setTrainerApplications(applications);
       }
 
-      // Fetch user interests with proper joins
+      // Fetch user interests - fixed query
       const { data: interests } = await supabase
         .from('user_interests')
         .select(`
@@ -126,13 +120,29 @@ const AdminDashboard = () => {
           message,
           status,
           created_at,
-          user_profiles!user_interests_user_id_fkey (full_name, city),
-          trainer_profiles!user_interests_trainer_id_fkey (full_name)
+          user_id,
+          trainer_id
         `)
         .order('created_at', { ascending: false });
 
       if (interests) {
-        setUserInterests(interests as UserInterest[]);
+        // Fetch user and trainer profiles separately
+        const userIds = [...new Set(interests.map(i => i.user_id))];
+        const trainerIds = [...new Set(interests.map(i => i.trainer_id))];
+
+        const [userProfilesData, trainerProfilesData] = await Promise.all([
+          supabase.from('user_profiles').select('id, full_name, city').in('id', userIds),
+          supabase.from('trainer_profiles').select('id, full_name').in('id', trainerIds)
+        ]);
+
+        // Combine data
+        const enrichedInterests = interests.map(interest => ({
+          ...interest,
+          user_profiles: userProfilesData.data?.find(profile => profile.id === interest.user_id) || null,
+          trainer_profiles: trainerProfilesData.data?.find(profile => profile.id === interest.trainer_id) || null
+        }));
+
+        setUserInterests(enrichedInterests);
       }
 
     } catch (error) {

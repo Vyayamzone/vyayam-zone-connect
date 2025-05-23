@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -76,7 +75,7 @@ const TrainerDashboard = () => {
         setStats(statsData[0]);
       }
 
-      // Fetch user interests with proper join to user_profiles
+      // Fetch user interests - fixed query
       const { data: interestsData } = await supabase
         .from('user_interests')
         .select(`
@@ -84,21 +83,29 @@ const TrainerDashboard = () => {
           user_id,
           message,
           status,
-          created_at,
-          user_profiles!user_interests_user_id_fkey (
-            full_name,
-            phone,
-            city
-          )
+          created_at
         `)
         .eq('trainer_id', user.id)
         .order('created_at', { ascending: false });
 
       if (interestsData) {
-        setInterests(interestsData as UserInterest[]);
+        // Fetch user profiles separately
+        const userIds = interestsData.map(interest => interest.user_id);
+        const { data: userProfilesData } = await supabase
+          .from('user_profiles')
+          .select('id, full_name, phone, city')
+          .in('id', userIds);
+
+        // Combine data
+        const enrichedInterests = interestsData.map(interest => ({
+          ...interest,
+          user_profiles: userProfilesData?.find(profile => profile.id === interest.user_id) || null
+        }));
+
+        setInterests(enrichedInterests);
       }
 
-      // Fetch training sessions with proper join to user_profiles
+      // Fetch training sessions - fixed query
       const { data: sessionsData } = await supabase
         .from('training_sessions')
         .select(`
@@ -107,16 +114,27 @@ const TrainerDashboard = () => {
           mode,
           session_date,
           amount,
-          user_profiles!training_sessions_user_id_fkey (
-            full_name
-          )
+          user_id
         `)
         .eq('trainer_id', user.id)
         .order('session_date', { ascending: false })
         .limit(10);
 
       if (sessionsData) {
-        setSessions(sessionsData as TrainingSession[]);
+        // Fetch user profiles separately
+        const userIds = sessionsData.map(session => session.user_id);
+        const { data: userProfilesData } = await supabase
+          .from('user_profiles')
+          .select('id, full_name')
+          .in('id', userIds);
+
+        // Combine data
+        const enrichedSessions = sessionsData.map(session => ({
+          ...session,
+          user_profiles: userProfilesData?.find(profile => profile.id === session.user_id) || null
+        }));
+
+        setSessions(enrichedSessions);
       }
 
     } catch (error) {
