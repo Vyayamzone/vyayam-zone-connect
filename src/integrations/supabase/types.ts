@@ -9,6 +9,75 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      trainer_availability: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          end_time: string
+          id: string
+          is_available: boolean | null
+          start_time: string
+          trainer_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          end_time: string
+          id?: string
+          is_available?: boolean | null
+          start_time: string
+          trainer_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          is_available?: boolean | null
+          start_time?: string
+          trainer_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      trainer_content: {
+        Row: {
+          content_type: string
+          created_at: string
+          description: string | null
+          file_url: string
+          id: string
+          moderation_status: string | null
+          title: string
+          trainer_id: string
+          updated_at: string
+        }
+        Insert: {
+          content_type: string
+          created_at?: string
+          description?: string | null
+          file_url: string
+          id?: string
+          moderation_status?: string | null
+          title: string
+          trainer_id: string
+          updated_at?: string
+        }
+        Update: {
+          content_type?: string
+          created_at?: string
+          description?: string | null
+          file_url?: string
+          id?: string
+          moderation_status?: string | null
+          title?: string
+          trainer_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       trainer_profiles: {
         Row: {
           age: number | null
@@ -25,6 +94,7 @@ export type Database = {
           offers_online_sessions: boolean | null
           phone: string | null
           services_offered: string[] | null
+          status: string | null
           updated_at: string
           years_experience: number | null
         }
@@ -43,6 +113,7 @@ export type Database = {
           offers_online_sessions?: boolean | null
           phone?: string | null
           services_offered?: string[] | null
+          status?: string | null
           updated_at?: string
           years_experience?: number | null
         }
@@ -61,8 +132,84 @@ export type Database = {
           offers_online_sessions?: boolean | null
           phone?: string | null
           services_offered?: string[] | null
+          status?: string | null
           updated_at?: string
           years_experience?: number | null
+        }
+        Relationships: []
+      }
+      training_sessions: {
+        Row: {
+          amount: number
+          created_at: string
+          duration_minutes: number
+          id: string
+          mode: string
+          notes: string | null
+          session_date: string
+          session_type: string
+          status: string | null
+          trainer_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          mode: string
+          notes?: string | null
+          session_date: string
+          session_type: string
+          status?: string | null
+          trainer_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          mode?: string
+          notes?: string | null
+          session_date?: string
+          session_type?: string
+          status?: string | null
+          trainer_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_interests: {
+        Row: {
+          created_at: string
+          id: string
+          message: string | null
+          status: string | null
+          trainer_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          status?: string | null
+          trainer_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          status?: string | null
+          trainer_id?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -150,6 +297,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_trainer_stats: {
+        Args: { p_trainer_id: string }
+        Returns: {
+          total_sessions: number
+          total_clients: number
+          total_earnings: number
+          pending_interests: number
+        }[]
+      }
       has_role: {
         Args: { _user_id: string; _role: string }
         Returns: boolean

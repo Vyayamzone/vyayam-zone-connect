@@ -1,297 +1,547 @@
 
-import Layout from "@/components/layout/Layout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuth } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/components/ui/use-toast';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { 
+  Users, 
+  UserCheck, 
+  Calendar, 
+  DollarSign, 
+  FileText, 
+  CheckCircle, 
+  XCircle,
+  Eye,
+  Plus
+} from 'lucide-react';
 
-// Mock data
-const statistics = {
-  users: 248,
-  trainers: 64,
-  sessions: 1423,
-  revenue: "$36,240",
-};
+interface PlatformStats {
+  total_trainers: number;
+  pending_trainers: number;
+  approved_trainers: number;
+  total_users: number;
+  total_sessions: number;
+  total_revenue: number;
+}
 
-const recentUsers = [
-  { id: 1, name: "Alice Johnson", email: "alice@example.com", role: "user", joinDate: "2025-04-28" },
-  { id: 2, name: "Michael Smith", email: "michael@example.com", role: "trainer", joinDate: "2025-04-27" },
-  { id: 3, name: "Sophia Lee", email: "sophia@example.com", role: "user", joinDate: "2025-04-26" },
-  { id: 4, name: "David Brown", email: "david@example.com", role: "trainer", joinDate: "2025-04-25" },
-  { id: 5, name: "Emma Wilson", email: "emma@example.com", role: "user", joinDate: "2025-04-24" },
-];
+interface TrainerApplication {
+  id: string;
+  full_name: string;
+  age: number;
+  gender: string;
+  phone: string;
+  city: string;
+  services_offered: string[];
+  years_experience: number;
+  career_motivation: string;
+  status: string;
+  created_at: string;
+}
+
+interface UserInterest {
+  id: string;
+  message: string;
+  status: string;
+  created_at: string;
+  user_profiles: {
+    full_name: string;
+    city: string;
+  };
+  trainer_profiles: {
+    full_name: string;
+  };
+}
 
 const AdminDashboard = () => {
-  const { user } = useAuth();
+  const { logout } = useAuth();
+  const { toast } = useToast();
+  const [stats, setStats] = useState<PlatformStats | null>(null);
+  const [trainerApplications, setTrainerApplications] = useState<TrainerApplication[]>([]);
+  const [userInterests, setUserInterests] = useState<UserInterest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedApplication, setSelectedApplication] = useState<TrainerApplication | null>(null);
+
+  // Session form state
+  const [sessionForm, setSessionForm] = useState({
+    trainer_id: '',
+    user_id: '',
+    session_type: '',
+    mode: 'online',
+    session_date: '',
+    amount: '',
+    notes: ''
+  });
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      // Fetch platform stats
+      const [trainersData, usersData, sessionsData] = await Promise.all([
+        supabase.from('trainer_profiles').select('status'),
+        supabase.from('user_profiles').select('id'),
+        supabase.from('training_sessions').select('amount')
+      ]);
+
+      if (trainersData.data && usersData.data && sessionsData.data) {
+        const pendingTrainers = trainersData.data.filter(t => t.status === 'pending').length;
+        const approvedTrainers = trainersData.data.filter(t => t.status === 'approved').length;
+        const totalRevenue = sessionsData.data.reduce((sum, session) => sum + Number(session.amount), 0);
+
+        setStats({
+          total_trainers: trainersData.data.length,
+          pending_trainers: pendingTrainers,
+          approved_trainers: approvedTrainers,
+          total_users: usersData.data.length,
+          total_sessions: sessionsData.data.length,
+          total_revenue: totalRevenue
+        });
+      }
+
+      // Fetch trainer applications
+      const { data: applications } = await supabase
+        .from('trainer_profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (applications) {
+        setTrainerApplications(applications);
+      }
+
+      // Fetch user interests
+      const { data: interests } = await supabase
+        .from('user_interests')
+        .select(`
+          *,
+          user_profiles (full_name, city),
+          trainer_profiles (full_name)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (interests) {
+        setUserInterests(interests);
+      }
+
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to load dashboard data',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateTrainerStatus = async (trainerId: string, status: string) => {
+    try {
+      const { error } = await supabase
+        .from('trainer_profiles')
+        .update({ status })
+        .eq('id', trainerId);
+
+      if (error) throw error;
+
+      setTrainerApplications(prev =>
+        prev.map(app =>
+          app.id === trainerId ? { ...app, status } : app
+        )
+      );
+
+      toast({
+        title: 'Success',
+        description: `Trainer ${status} successfully`,
+      });
+
+      // Refresh stats
+      fetchDashboardData();
+    } catch (error) {
+      console.error('Error updating trainer status:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to update trainer status',
+      });
+    }
+  };
+
+  const addSession = async () => {
+    try {
+      const { error } = await supabase
+        .from('training_sessions')
+        .insert([{
+          trainer_id: sessionForm.trainer_id,
+          user_id: sessionForm.user_id,
+          session_type: sessionForm.session_type,
+          mode: sessionForm.mode,
+          session_date: sessionForm.session_date,
+          amount: parseFloat(sessionForm.amount),
+          notes: sessionForm.notes,
+          status: 'completed'
+        }]);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Session added successfully',
+      });
+
+      // Reset form
+      setSessionForm({
+        trainer_id: '',
+        user_id: '',
+        session_type: '',
+        mode: 'online',
+        session_date: '',
+        amount: '',
+        notes: ''
+      });
+
+      // Refresh data
+      fetchDashboardData();
+    } catch (error) {
+      console.error('Error adding session:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to add session',
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-vyayam-purple mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading admin dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <Layout>
-      <div className="container mx-auto py-8 px-4">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
-            <p className="text-gray-600">Welcome back, {user?.name}</p>
+            <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+            <p className="text-gray-600">VyayamZone Management</p>
           </div>
-          <Button>Generate Reports</Button>
+          <Button onClick={logout} variant="outline">
+            Logout
+          </Button>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        {/* Platform Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-8">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center">
+                <UserCheck className="w-6 h-6 text-blue-600" />
+                <div className="ml-3">
+                  <p className="text-xs font-medium text-gray-600">Total Trainers</p>
+                  <p className="text-lg font-bold text-gray-900">{stats?.total_trainers || 0}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center">
+                <Clock className="w-6 h-6 text-yellow-600" />
+                <div className="ml-3">
+                  <p className="text-xs font-medium text-gray-600">Pending</p>
+                  <p className="text-lg font-bold text-gray-900">{stats?.pending_trainers || 0}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center">
+                <CheckCircle className="w-6 h-6 text-green-600" />
+                <div className="ml-3">
+                  <p className="text-xs font-medium text-gray-600">Approved</p>
+                  <p className="text-lg font-bold text-gray-900">{stats?.approved_trainers || 0}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center">
+                <Users className="w-6 h-6 text-purple-600" />
+                <div className="ml-3">
+                  <p className="text-xs font-medium text-gray-600">Total Users</p>
+                  <p className="text-lg font-bold text-gray-900">{stats?.total_users || 0}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center">
+                <Calendar className="w-6 h-6 text-indigo-600" />
+                <div className="ml-3">
+                  <p className="text-xs font-medium text-gray-600">Sessions</p>
+                  <p className="text-lg font-bold text-gray-900">{stats?.total_sessions || 0}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center">
+                <DollarSign className="w-6 h-6 text-green-600" />
+                <div className="ml-3">
+                  <p className="text-xs font-medium text-gray-600">Revenue</p>
+                  <p className="text-lg font-bold text-gray-900">₹{stats?.total_revenue || 0}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">
-                Total Users
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{statistics.users}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">
-                Total Trainers
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{statistics.trainers}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">
-                Total Sessions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{statistics.sessions}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">
-                Total Revenue
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{statistics.revenue}</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Tabs defaultValue="overview" className="space-y-8">
-          <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="trainers">Trainers</TabsTrigger>
-            <TabsTrigger value="reports">Reports</TabsTrigger>
+        {/* Main Content Tabs */}
+        <Tabs defaultValue="applications" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="applications">Trainer Applications</TabsTrigger>
+            <TabsTrigger value="interests">User Interests</TabsTrigger>
+            <TabsTrigger value="sessions">Add Session</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="space-y-6">
+          <TabsContent value="applications" className="space-y-4">
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-medium">
-                  Recent User Activity
-                </CardTitle>
-                <CardDescription>New user registrations</CardDescription>
+              <CardHeader>
+                <CardTitle>Trainer Applications</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="text-left text-sm text-gray-500 border-b">
-                        <th className="pb-2 font-medium">Name</th>
-                        <th className="pb-2 font-medium">Email</th>
-                        <th className="pb-2 font-medium">Role</th>
-                        <th className="pb-2 font-medium">Join Date</th>
-                        <th className="pb-2 font-medium"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {recentUsers.map((user) => (
-                        <tr key={user.id} className="border-b">
-                          <td className="py-3">{user.name}</td>
-                          <td className="py-3">{user.email}</td>
-                          <td className="py-3">
-                            <span
-                              className={`text-xs font-medium px-2 py-1 rounded-full ${
-                                user.role === "trainer"
-                                  ? "bg-vyayam-softpurple text-vyayam-purple"
-                                  : "bg-vyayam-green text-green-700"
-                              }`}
-                            >
-                              {user.role}
-                            </span>
-                          </td>
-                          <td className="py-3">
-                            {new Date(user.joinDate).toLocaleDateString()}
-                          </td>
-                          <td className="py-3 text-right">
-                            <Button variant="ghost" size="sm">
-                              View
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="mt-4 text-right">
-                  <Button variant="outline">View All Users</Button>
-                </div>
-              </CardContent>
-            </Card>
+                <div className="space-y-4">
+                  {trainerApplications.map((application) => (
+                    <div key={application.id} className="border rounded-lg p-4 bg-white">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h3 className="font-semibold text-lg">{application.full_name}</h3>
+                          <p className="text-gray-600">{application.city}</p>
+                          <p className="text-sm text-gray-500">
+                            {application.years_experience} years experience
+                          </p>
+                        </div>
+                        <Badge variant={
+                          application.status === 'pending' ? 'default' :
+                          application.status === 'approved' ? 'default' : 'destructive'
+                        }>
+                          {application.status}
+                        </Badge>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Services</p>
+                          <p className="text-sm">{application.services_offered?.join(', ')}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Phone</p>
+                          <p className="text-sm">{application.phone}</p>
+                        </div>
+                      </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg font-medium">
-                    Platform Activity
-                  </CardTitle>
-                  <CardDescription>Recent system events</CardDescription>
-                </CardHeader>
-                <CardContent className="h-64 flex items-center justify-center">
-                  <p className="text-center text-gray-500">
-                    Activity chart will be implemented in next phase.
-                  </p>
-                </CardContent>
-              </Card>
+                      {application.career_motivation && (
+                        <div className="mb-4">
+                          <p className="text-sm font-medium text-gray-600">Career Motivation</p>
+                          <p className="text-sm text-gray-700">{application.career_motivation}</p>
+                        </div>
+                      )}
 
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg font-medium">
-                    Session Statistics
-                  </CardTitle>
-                  <CardDescription>Distribution of session types</CardDescription>
-                </CardHeader>
-                <CardContent className="h-64 flex items-center justify-center">
-                  <p className="text-center text-gray-500">
-                    Statistics chart will be implemented in next phase.
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-medium">
-                  Quick Actions
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <Button variant="outline" className="h-auto flex flex-col py-6">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="w-6 h-6 mb-2 text-vyayam-purple"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z"
-                      />
-                    </svg>
-                    Add User
-                  </Button>
-                  <Button variant="outline" className="h-auto flex flex-col py-6">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="w-6 h-6 mb-2 text-vyayam-purple"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0 1 18 16.5h-2.25m-7.5 0h7.5m-7.5 0-1 3m8.5-3 1 3m0 0 .5 1.5m-.5-1.5h-9.5m0 0-.5 1.5m.75-9 3-3 2.148 2.148A12.061 12.061 0 0 1 16.5 7.605"
-                      />
-                    </svg>
-                    Reports
-                  </Button>
-                  <Button variant="outline" className="h-auto flex flex-col py-6">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="w-6 h-6 mb-2 text-vyayam-purple"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
-                      />
-                    </svg>
-                    Settings
-                  </Button>
-                  <Button variant="outline" className="h-auto flex flex-col py-6">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="w-6 h-6 mb-2 text-vyayam-purple"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"
-                      />
-                    </svg>
-                    Help
-                  </Button>
+                      {application.status === 'pending' && (
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm"
+                            onClick={() => updateTrainerStatus(application.id, 'approved')}
+                          >
+                            <CheckCircle className="w-4 h-4 mr-1" />
+                            Approve
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="destructive"
+                            onClick={() => updateTrainerStatus(application.id, 'rejected')}
+                          >
+                            <XCircle className="w-4 h-4 mr-1" />
+                            Reject
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="users">
-            <div className="text-center py-8">
-              <h2 className="text-2xl font-semibold mb-2">User Management</h2>
-              <p className="text-gray-600 mb-6">
-                Manage all platform users and their accounts
-              </p>
-              <p>User management tools will be implemented in the next phase.</p>
-              <Button className="mt-4">View All Users</Button>
-            </div>
+          <TabsContent value="interests" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>User Interest Requests</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {userInterests.map((interest) => (
+                    <div key={interest.id} className="border rounded-lg p-4 bg-white">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-semibold">{interest.user_profiles?.full_name}</h3>
+                          <p className="text-sm text-gray-600">
+                            Interested in: {interest.trainer_profiles?.full_name}
+                          </p>
+                          <p className="text-sm text-gray-500">{interest.user_profiles?.city}</p>
+                          {interest.message && (
+                            <p className="text-sm text-gray-700 mt-2">{interest.message}</p>
+                          )}
+                        </div>
+                        <Badge variant={
+                          interest.status === 'pending' ? 'default' :
+                          interest.status === 'contacted' ? 'default' : 'secondary'
+                        }>
+                          {interest.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
-          <TabsContent value="trainers">
-            <div className="text-center py-8">
-              <h2 className="text-2xl font-semibold mb-2">Trainer Management</h2>
-              <p className="text-gray-600 mb-6">
-                Manage fitness professionals on the platform
-              </p>
-              <p>Trainer management tools will be implemented in the next phase.</p>
-              <Button className="mt-4">View All Trainers</Button>
-            </div>
+          <TabsContent value="sessions" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Add Training Session</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="trainer_id">Trainer ID</Label>
+                    <Input
+                      id="trainer_id"
+                      value={sessionForm.trainer_id}
+                      onChange={(e) => setSessionForm(prev => ({ ...prev, trainer_id: e.target.value }))}
+                      placeholder="Trainer UUID"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="user_id">User ID</Label>
+                    <Input
+                      id="user_id"
+                      value={sessionForm.user_id}
+                      onChange={(e) => setSessionForm(prev => ({ ...prev, user_id: e.target.value }))}
+                      placeholder="User UUID"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="session_type">Session Type</Label>
+                    <Input
+                      id="session_type"
+                      value={sessionForm.session_type}
+                      onChange={(e) => setSessionForm(prev => ({ ...prev, session_type: e.target.value }))}
+                      placeholder="e.g., Yoga, Fitness, Nutrition"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="mode">Mode</Label>
+                    <Select 
+                      value={sessionForm.mode} 
+                      onValueChange={(value) => setSessionForm(prev => ({ ...prev, mode: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="online">Online</SelectItem>
+                        <SelectItem value="offline">Offline</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="session_date">Session Date</Label>
+                    <Input
+                      id="session_date"
+                      type="date"
+                      value={sessionForm.session_date}
+                      onChange={(e) => setSessionForm(prev => ({ ...prev, session_date: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="amount">Amount (₹)</Label>
+                    <Input
+                      id="amount"
+                      type="number"
+                      value={sessionForm.amount}
+                      onChange={(e) => setSessionForm(prev => ({ ...prev, amount: e.target.value }))}
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="notes">Notes (Optional)</Label>
+                  <Input
+                    id="notes"
+                    value={sessionForm.notes}
+                    onChange={(e) => setSessionForm(prev => ({ ...prev, notes: e.target.value }))}
+                    placeholder="Session notes..."
+                  />
+                </div>
+
+                <Button onClick={addSession} className="w-full">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Session
+                </Button>
+              </CardContent>
+            </Card>
           </TabsContent>
 
-          <TabsContent value="reports">
-            <div className="text-center py-8">
-              <h2 className="text-2xl font-semibold mb-2">Reports & Analytics</h2>
-              <p className="text-gray-600 mb-6">
-                View platform metrics and generate reports
-              </p>
-              <p>Reporting tools will be implemented in the next phase.</p>
-              <Button className="mt-4">Generate Report</Button>
-            </div>
+          <TabsContent value="analytics" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Platform Analytics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-500 text-center py-8">
+                  Advanced analytics and reporting features coming soon.
+                </p>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
-      </div>
-    </Layout>
+      </main>
+    </div>
   );
 };
 

@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
@@ -12,6 +11,7 @@ interface UserData {
   name: string;
   email: string;
   role: UserRole;
+  trainerStatus?: string | null;
 }
 
 interface AuthContextType {
@@ -40,13 +40,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(currentSession);
         if (currentSession?.user) {
           // Fetch user role when session changes
-          fetchUserRole(currentSession.user.id).then(role => {
-            setUser({
-              id: currentSession.user.id,
-              email: currentSession.user.email || '',
-              name: currentSession.user.user_metadata.full_name || '',
-              role: role as UserRole
-            });
+          fetchUserRoleAndProfile(currentSession.user.id).then(userData => {
+            setUser(userData);
           });
         } else {
           setUser(null);
@@ -58,13 +53,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       setSession(currentSession);
       if (currentSession?.user) {
-        fetchUserRole(currentSession.user.id).then(role => {
-          setUser({
-            id: currentSession.user.id,
-            email: currentSession.user.email || '',
-            name: currentSession.user.user_metadata.full_name || '',
-            role: role as UserRole
-          });
+        fetchUserRoleAndProfile(currentSession.user.id).then(userData => {
+          setUser(userData);
         });
       }
       setIsLoading(false);
@@ -74,6 +64,59 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       subscription.unsubscribe();
     };
   }, []);
+
+  // Enhanced function to fetch user role and profile data
+  const fetchUserRoleAndProfile = async (userId: string): Promise<UserData | null> => {
+    try {
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .single();
+
+      if (roleError) {
+        console.error('Error fetching user role:', roleError);
+        return null;
+      }
+
+      const role = roleData?.role || 'user';
+
+      // Get profile data based on role
+      let profileData = null;
+      if (role === 'trainer') {
+        const { data, error } = await supabase
+          .from('trainer_profiles')
+          .select('full_name, status')
+          .eq('id', userId)
+          .single();
+        
+        if (!error && data) {
+          profileData = data;
+        }
+      } else if (role === 'user') {
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .select('full_name')
+          .eq('id', userId)
+          .single();
+        
+        if (!error && data) {
+          profileData = data;
+        }
+      }
+
+      return {
+        id: userId,
+        email: '',
+        name: profileData?.full_name || '',
+        role: role as UserRole,
+        trainerStatus: profileData?.status || null
+      };
+    } catch (error) {
+      console.error('Error in fetchUserRoleAndProfile:', error);
+      return null;
+    }
+  };
 
   // Function to fetch user role from user_roles table
   const fetchUserRole = async (userId: string): Promise<string> => {
@@ -109,21 +152,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data.user) {
-        const role = await fetchUserRole(data.user.id);
+        const userData = await fetchUserRoleAndProfile(data.user.id);
         
-        // Redirect based on role
-        if (role === 'admin') {
-          navigate('/admin-dashboard');
-        } else if (role === 'trainer') {
-          navigate('/trainer-dashboard');
-        } else {
-          navigate('/user-dashboard');
-        }
+        if (userData) {
+          // Handle trainer approval workflow
+          if (userData.role === 'trainer' && userData.trainerStatus === 'pending') {
+            navigate('/trainer-under-review');
+            return;
+          }
+          
+          // Redirect based on role
+          if (userData.role === 'admin') {
+            navigate('/admin-dashboard');
+          } else if (userData.role === 'trainer') {
+            navigate('/trainer-dashboard');
+          } else {
+            navigate('/user-dashboard');
+          }
 
-        toast({
-          title: 'Login successful',
-          description: `Welcome back!`,
-        });
+          toast({
+            title: 'Login successful',
+            description: `Welcome back!`,
+          });
+        }
       }
     } catch (error: any) {
       toast({
@@ -168,11 +219,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           description: 'Your account has been created successfully!',
         });
         
-        // Redirect based on role
-        if (userData.role === 'admin') {
+        // Redirect based on role - trainers go to under review page
+        if (userData.role === 'trainer') {
+          navigate('/trainer-under-review');
+        } else if (userData.role === 'admin') {
           navigate('/admin-dashboard');
-        } else if (userData.role === 'trainer') {
-          navigate('/trainer-dashboard');
         } else {
           navigate('/user-dashboard');
         }

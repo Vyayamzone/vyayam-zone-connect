@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,6 +16,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import SignupRoleSelect from "./pages/SignupRoleSelect";
 import UserSignup from "./pages/UserSignup";
 import TrainerSignup from "./pages/TrainerSignup";
+import TrainerUnderReview from "./pages/TrainerUnderReview";
 
 const queryClient = new QueryClient();
 
