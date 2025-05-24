@@ -6,32 +6,32 @@
 @layer base {
   :root {
     --background: 255 255 255;
-    --foreground: 20 20 20;
+    --foreground: 15 23 42;
 
     --card: 255 255 255;
-    --card-foreground: 20 20 20;
+    --card-foreground: 15 23 42;
 
     --popover: 255 255 255;
-    --popover-foreground: 20 20 20;
+    --popover-foreground: 15 23 42;
 
-    --primary: 258 82% 74%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 37 99 235;
+    --primary-foreground: 255 255 255;
 
-    --secondary: 259 29% 54%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 100 116 139;
+    --secondary-foreground: 255 255 255;
 
-    --muted: 240 5% 96%;
-    --muted-foreground: 240 4% 46%;
+    --muted: 248 250 252;
+    --muted-foreground: 100 116 139;
 
-    --accent: 240 5% 96%;
-    --accent-foreground: 258 82% 74%;
+    --accent: 241 245 249;
+    --accent-foreground: 37 99 235;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 239 68 68;
+    --destructive-foreground: 255 255 255;
 
-    --border: 240 6% 90%;
-    --input: 240 6% 90%;
-    --ring: 258 82% 74%;
+    --border: 226 232 240;
+    --input: 226 232 240;
+    --ring: 37 99 235;
 
     --radius: 0.5rem;
   }
@@ -72,12 +72,12 @@
 }
 
 @layer utilities {
-  .animated-gradient-text {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-vyayam-purple via-vyayam-purple-dark to-vyayam-purple-light bg-300% animate-gradient;
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-cyan-600 to-green-600;
   }
 
-  .gradient-text {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-vyayam-purple to-vyayam-purple-dark;
+  .animated-gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-cyan-600 to-green-600 bg-300% animate-gradient;
   }
 }
 
@@ -90,10 +90,40 @@
   }
 }
 
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-soft {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.05);
+  }
+}
+
 .bg-300% {
   background-size: 300% 300%;
 }
 
 .animate-gradient {
   animation: gradient 3s ease infinite;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.6s ease-out;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 4s ease-in-out infinite;
 }

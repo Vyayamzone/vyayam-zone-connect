@@ -126,7 +126,9 @@ export type Database = {
           offers_home_visits: boolean | null
           offers_online_sessions: boolean | null
           phone: string | null
+          role: string | null
           services_offered: string[] | null
+          status: string | null
           updated_at: string
           years_experience: number | null
         }
@@ -144,7 +146,9 @@ export type Database = {
           offers_home_visits?: boolean | null
           offers_online_sessions?: boolean | null
           phone?: string | null
+          role?: string | null
           services_offered?: string[] | null
+          status?: string | null
           updated_at?: string
           years_experience?: number | null
         }
@@ -162,7 +166,9 @@ export type Database = {
           offers_home_visits?: boolean | null
           offers_online_sessions?: boolean | null
           phone?: string | null
+          role?: string | null
           services_offered?: string[] | null
+          status?: string | null
           updated_at?: string
           years_experience?: number | null
         }

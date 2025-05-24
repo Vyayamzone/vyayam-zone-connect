@@ -6,6 +6,9 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { detectUserRole, getRedirectPath, UserRole } from '@/utils/roleDetection';
 
+// Export UserRole type for use in other components
+export type { UserRole };
+
 interface UserData {
   id: string;
   name: string;

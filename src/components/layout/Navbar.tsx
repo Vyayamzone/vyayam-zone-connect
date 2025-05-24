@@ -48,47 +48,66 @@ const Navbar = () => {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled
-          ? 'bg-white shadow-md py-2'
-          : 'bg-transparent py-4'
+          ? 'bg-white/95 backdrop-blur-md shadow-lg py-3'
+          : 'bg-white/80 backdrop-blur-sm py-4'
       }`}
     >
-      <nav className="container mx-auto px-4">
+      <nav className="container mx-auto px-4 lg:px-8">
         <div className="flex justify-between items-center">
-          <Link to="/" className="flex items-center">
-            <span className={`text-2xl font-bold ${isScrolled ? 'text-vyayam-purple' : 'text-vyayam-purple'}`}>
-              VyayamZone
+          <Link to="/" className="flex items-center space-x-3 group">
+            <div className="relative">
+              <img 
+                src="/lovable-uploads/e4fc0f62-da78-4bf7-83a3-01fd5ebc9dfa.png" 
+                alt="Vyayam Zone" 
+                className="h-10 w-10 rounded-lg transition-transform duration-200 group-hover:scale-105"
+              />
+            </div>
+            <span className="text-xl font-bold text-slate-800 group-hover:text-blue-600 transition-colors duration-200">
+              Vyayam Zone
             </span>
           </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <NavLinks isScrolled={isScrolled} />
-            <div className="flex items-center space-x-4">
+            <NavLinks />
+            <div className="flex items-center space-x-3">
               {isAuthenticated ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline">
+                    <Button 
+                      variant="outline" 
+                      className="bg-white/80 border-slate-200 hover:bg-blue-50 hover:border-blue-200 transition-all duration-200"
+                    >
                       {user?.name || 'Account'}
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+                  <DropdownMenuContent align="end" className="bg-white/95 backdrop-blur-md border-slate-200">
                     <DropdownMenuItem asChild>
-                      <Link to={getDashboardLink()}>Dashboard</Link>
+                      <Link to={getDashboardLink()} className="cursor-pointer">Dashboard</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/profile">Profile</Link>
+                      <Link to="/profile" className="cursor-pointer">Profile</Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={logout}>Logout</DropdownMenuItem>
+                    <DropdownMenuItem onClick={logout} className="cursor-pointer text-red-600 hover:text-red-700">
+                      Logout
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
                 <>
                   <AuthModal variant="outline" mode="login">
-                    <Button variant="outline">Login</Button>
+                    <Button 
+                      variant="outline" 
+                      className="bg-white/80 border-slate-200 hover:bg-blue-50 hover:border-blue-200 transition-all duration-200"
+                    >
+                      Login
+                    </Button>
                   </AuthModal>
                   <AuthModal mode="signup">
-                    <Button>Sign Up</Button>
+                    <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg transition-all duration-200">
+                      Sign Up
+                    </Button>
                   </AuthModal>
                 </>
               )}
@@ -97,48 +116,56 @@ const Navbar = () => {
 
           {/* Mobile Menu Button */}
           <button 
-            className="md:hidden p-2"
+            className="md:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors duration-200"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             aria-label="Toggle menu"
           >
             {isMobileMenuOpen ? (
-              <X className="h-6 w-6 text-vyayam-purple" />
+              <X className="h-6 w-6 text-slate-700" />
             ) : (
-              <Menu className="h-6 w-6 text-vyayam-purple" />
+              <Menu className="h-6 w-6 text-slate-700" />
             )}
           </button>
         </div>
 
         {/* Mobile Navigation */}
         {isMobileMenuOpen && (
-          <div className="md:hidden py-4 animate-fade-in">
-            <div className="flex flex-col space-y-4">
-              <NavLinks isMobile isScrolled={isScrolled} />
+          <div className="md:hidden mt-4 py-4 bg-white/95 backdrop-blur-md rounded-lg border border-slate-200 animate-fade-in">
+            <div className="flex flex-col space-y-2">
+              <NavLinks isMobile />
               {isAuthenticated ? (
                 <>
                   <Link 
                     to={getDashboardLink()} 
-                    className="px-4 py-2 text-vyayam-purple hover:bg-vyayam-purple hover:bg-opacity-10 rounded-md"
+                    className="px-4 py-3 text-slate-700 hover:bg-blue-50 hover:text-blue-600 rounded-md transition-all duration-200"
                   >
                     Dashboard
                   </Link>
                   <Link 
                     to="/profile" 
-                    className="px-4 py-2 text-vyayam-purple hover:bg-vyayam-purple hover:bg-opacity-10 rounded-md"
+                    className="px-4 py-3 text-slate-700 hover:bg-blue-50 hover:text-blue-600 rounded-md transition-all duration-200"
                   >
                     Profile
                   </Link>
-                  <Button variant="outline" onClick={logout} className="w-full">
+                  <Button 
+                    variant="outline" 
+                    onClick={logout} 
+                    className="mx-4 mt-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
+                  >
                     Logout
                   </Button>
                 </>
               ) : (
-                <div className="flex flex-col space-y-2">
+                <div className="flex flex-col space-y-2 px-4 mt-2">
                   <AuthModal mode="signup">
-                    <Button className="w-full">Sign Up</Button>
+                    <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                      Sign Up
+                    </Button>
                   </AuthModal>
                   <AuthModal mode="login" variant="outline">
-                    <Button variant="outline" className="w-full">Login</Button>
+                    <Button variant="outline" className="w-full border-slate-200 hover:bg-blue-50 hover:border-blue-200">
+                      Login
+                    </Button>
                   </AuthModal>
                 </div>
               )}
@@ -152,14 +179,12 @@ const Navbar = () => {
 
 interface NavLinksProps {
   isMobile?: boolean;
-  isScrolled?: boolean;
 }
 
-const NavLinks = ({ isMobile = false, isScrolled = false }: NavLinksProps) => {
-  const textColorClass = isScrolled ? 'text-foreground' : 'text-foreground';
+const NavLinks = ({ isMobile = false }: NavLinksProps) => {
   const linkClass = isMobile
-    ? `block px-4 py-2 ${textColorClass} hover:text-vyayam-purple`
-    : `${textColorClass} hover:text-vyayam-purple`;
+    ? "block px-4 py-3 text-slate-700 hover:bg-blue-50 hover:text-blue-600 rounded-md transition-all duration-200"
+    : "text-slate-700 hover:text-blue-600 font-medium transition-colors duration-200 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-blue-600 after:transition-all after:duration-200 hover:after:w-full";
 
   const links = [
     { href: '/#services', label: 'Services' },
