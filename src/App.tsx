@@ -11,14 +11,17 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
-import UserDashboard from "./pages/UserDashboard";
-import TrainerDashboard from "./pages/TrainerDashboard";
-import AdminDashboard from "./pages/AdminDashboard";
 import SignupRoleSelect from "./pages/SignupRoleSelect";
 import UserSignup from "./pages/UserSignup";
 import TrainerSignup from "./pages/TrainerSignup";
 import TrainerUnderReview from "./pages/TrainerUnderReview";
 import Unauthorized from "./pages/Unauthorized";
+
+// Dashboard Pages
+import UserDashboard from "./pages/dashboards/UserDashboard";
+import TrainerDashboard from "./pages/dashboards/TrainerDashboard";
+import PendingTrainerDashboard from "./pages/dashboards/PendingTrainerDashboard";
+import AdminDashboard from "./pages/dashboards/AdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -44,8 +47,13 @@ const App = () => (
               <Route path="/user-dashboard" element={<UserDashboard />} />
             </Route>
 
-            {/* Protected Trainer Routes */}
-            <Route element={<ProtectedRoute allowedRoles={["trainer"]} />}>
+            {/* Protected Pending Trainer Routes */}
+            <Route element={<ProtectedRoute allowedRoles={["trainer"]} allowedTrainerStatus={["pending"]} />}>
+              <Route path="/pending-trainer-dashboard" element={<PendingTrainerDashboard />} />
+            </Route>
+
+            {/* Protected Approved Trainer Routes */}
+            <Route element={<ProtectedRoute allowedRoles={["trainer"]} allowedTrainerStatus={["approved"]} />}>
               <Route path="/trainer-dashboard" element={<TrainerDashboard />} />
             </Route>
 

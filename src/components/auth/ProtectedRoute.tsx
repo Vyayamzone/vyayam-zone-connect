@@ -1,15 +1,16 @@
 
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { UserRole } from '@/utils/roleDetection';
+import { useAuth, UserRole, TrainerStatus } from '@/contexts/AuthContext';
 
 interface ProtectedRouteProps {
   allowedRoles?: UserRole[];
+  allowedTrainerStatus?: TrainerStatus[];
   redirectPath?: string;
 }
 
 const ProtectedRoute = ({ 
   allowedRoles = [], 
+  allowedTrainerStatus = [],
   redirectPath = '/auth' 
 }: ProtectedRouteProps) => {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -23,13 +24,28 @@ const ProtectedRoute = ({
   }
 
   if (allowedRoles.length > 0 && user && !allowedRoles.includes(user.role)) {
-    // Redirect to appropriate dashboard based on role
+    // Redirect to appropriate dashboard based on role and status
     if (user.role === 'admin') {
       return <Navigate to="/admin-dashboard" replace />;
     } else if (user.role === 'trainer') {
-      return <Navigate to="/trainer-dashboard" replace />;
+      if (user.trainerStatus === 'pending') {
+        return <Navigate to="/pending-trainer-dashboard" replace />;
+      } else {
+        return <Navigate to="/trainer-dashboard" replace />;
+      }
     } else {
       return <Navigate to="/user-dashboard" replace />;
+    }
+  }
+
+  // Check trainer status if role is trainer and status restrictions are specified
+  if (user?.role === 'trainer' && allowedTrainerStatus.length > 0) {
+    if (!user.trainerStatus || !allowedTrainerStatus.includes(user.trainerStatus)) {
+      if (user.trainerStatus === 'pending') {
+        return <Navigate to="/pending-trainer-dashboard" replace />;
+      } else {
+        return <Navigate to="/trainer-dashboard" replace />;
+      }
     }
   }
 

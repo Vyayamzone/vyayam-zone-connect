@@ -321,6 +321,10 @@ export type Database = {
           pending_interests: number
         }[]
       }
+      get_trainer_status: {
+        Args: { user_email: string }
+        Returns: string
+      }
     }
     Enums: {
       experience_level: "beginner" | "intermediate" | "advanced"

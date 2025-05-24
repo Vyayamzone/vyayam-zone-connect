@@ -4,16 +4,17 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { detectUserRole, getRedirectPath, UserRole } from '@/utils/roleDetection';
+import { detectUserRole, getRedirectPath, UserRole, TrainerStatus } from '@/utils/roleDetection';
 
 // Export UserRole type for use in other components
-export type { UserRole };
+export type { UserRole, TrainerStatus };
 
 interface UserData {
   id: string;
   name: string;
   email: string;
   role: UserRole;
+  trainerStatus?: TrainerStatus;
   profile?: any;
 }
 
@@ -51,6 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               email: currentSession.user.email || '',
               name: roleResult.profile?.full_name || '',
               role: roleResult.role,
+              trainerStatus: roleResult.trainerStatus,
               profile: roleResult.profile
             };
             setUser(userData);
@@ -76,6 +78,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             email: currentSession.user.email || '',
             name: roleResult.profile?.full_name || '',
             role: roleResult.role,
+            trainerStatus: roleResult.trainerStatus,
             profile: roleResult.profile
           };
           setUser(userData);
@@ -108,7 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const roleResult = await detectUserRole(email);
         
         if (roleResult.role) {
-          navigate(getRedirectPath(roleResult.role));
+          navigate(getRedirectPath(roleResult.role, roleResult.trainerStatus));
           toast({
             title: 'Login successful',
             description: `Welcome back!`,
@@ -153,11 +156,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data.user) {
-        // Update the profile based on role
+        // Create profile based on role
         if (userData.role === 'user') {
-          await updateUserProfile(data.user.id, userData);
+          await createUserProfile(data.user.id, userData);
         } else if (userData.role === 'trainer') {
-          await updateTrainerProfile(data.user.id, userData);
+          await createTrainerProfile(data.user.id, userData);
         }
 
         toast({
@@ -167,7 +170,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Redirect based on role
         if (userData.role === 'trainer') {
-          navigate('/auth'); // Trainers need to wait for approval
+          navigate('/pending-trainer-dashboard');
         } else if (userData.role === 'admin') {
           navigate('/admin-dashboard');
         } else {
@@ -185,11 +188,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const updateUserProfile = async (userId: string, userData: any) => {
+  const createUserProfile = async (userId: string, userData: any) => {
     try {
       const { error } = await supabase
         .from('user_profiles')
-        .update({
+        .insert({
+          id: userId,
           full_name: userData.fullName,
           age: userData.age,
           gender: userData.gender,
@@ -200,18 +204,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           time_preference: userData.timePreference,
           health_conditions: userData.healthConditions,
           experience_level: userData.experienceLevel
-        })
-        .eq('id', userId);
+        });
 
       if (error) {
-        console.error('Error updating user profile:', error);
+        console.error('Error creating user profile:', error);
       }
     } catch (error) {
-      console.error('Error in updateUserProfile:', error);
+      console.error('Error in createUserProfile:', error);
     }
   };
 
-  const updateTrainerProfile = async (userId: string, userData: any) => {
+  const createTrainerProfile = async (userId: string, userData: any) => {
     try {
       // Upload certification files if provided
       let certificationUrls: string[] = [];
@@ -246,10 +249,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
 
-      // Update trainer profile
+      // Create trainer profile with pending status
       const { error } = await supabase
         .from('trainer_profiles')
-        .update({
+        .insert({
+          id: userId,
           full_name: userData.fullName,
           age: userData.age,
           gender: userData.gender,
@@ -262,15 +266,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           govt_id_file: govtIdUrl || null,
           availability_timings: userData.availabilityTimings,
           offers_home_visits: userData.offersHomeVisits,
-          offers_online_sessions: userData.offersOnlineSessions
-        })
-        .eq('id', userId);
+          offers_online_sessions: userData.offersOnlineSessions,
+          status: 'pending' // Set initial status as pending
+        });
 
       if (error) {
-        console.error('Error updating trainer profile:', error);
+        console.error('Error creating trainer profile:', error);
       }
     } catch (error) {
-      console.error('Error in updateTrainerProfile:', error);
+      console.error('Error in createTrainerProfile:', error);
     }
   };
 

@@ -83,10 +83,10 @@ const TrainerSignupForm = () => {
       
       toast({
         title: 'Account created',
-        description: 'Welcome to VyayamZone! You can now access your trainer dashboard.',
+        description: 'Your trainer application has been submitted for review.',
       });
       
-      // Redirect handled by AuthContext
+      // Navigation handled by AuthContext - will redirect to pending dashboard
     } catch (error: any) {
       toast({
         variant: 'destructive',
