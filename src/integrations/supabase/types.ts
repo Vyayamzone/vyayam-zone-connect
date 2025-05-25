@@ -44,72 +44,88 @@ export type Database = {
       }
       trainer_availability: {
         Row: {
-          created_at: string
+          created_at: string | null
           day_of_week: number
           end_time: string
           id: string
           is_available: boolean | null
           start_time: string
           trainer_id: string
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           day_of_week: number
           end_time: string
           id?: string
           is_available?: boolean | null
           start_time: string
           trainer_id: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           day_of_week?: number
           end_time?: string
           id?: string
           is_available?: boolean | null
           start_time?: string
           trainer_id?: string
-          updated_at?: string
+          updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "trainer_availability_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       trainer_content: {
         Row: {
           content_type: string
-          created_at: string
+          created_at: string | null
           description: string | null
           file_url: string
           id: string
           moderation_status: string | null
           title: string
           trainer_id: string
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           content_type: string
-          created_at?: string
+          created_at?: string | null
           description?: string | null
           file_url: string
           id?: string
           moderation_status?: string | null
           title: string
           trainer_id: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           content_type?: string
-          created_at?: string
+          created_at?: string | null
           description?: string | null
           file_url?: string
           id?: string
           moderation_status?: string | null
           title?: string
           trainer_id?: string
-          updated_at?: string
+          updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "trainer_content_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       trainer_profiles: {
         Row: {
@@ -118,9 +134,9 @@ export type Database = {
           career_motivation: string | null
           certification_files: string[] | null
           city: string | null
-          created_at: string
+          created_at: string | null
           full_name: string
-          gender: Database["public"]["Enums"]["gender_type"] | null
+          gender: string | null
           govt_id_file: string | null
           id: string
           offers_home_visits: boolean | null
@@ -129,7 +145,7 @@ export type Database = {
           role: string | null
           services_offered: string[] | null
           status: string | null
-          updated_at: string
+          updated_at: string | null
           years_experience: number | null
         }
         Insert: {
@@ -138,9 +154,9 @@ export type Database = {
           career_motivation?: string | null
           certification_files?: string[] | null
           city?: string | null
-          created_at?: string
+          created_at?: string | null
           full_name: string
-          gender?: Database["public"]["Enums"]["gender_type"] | null
+          gender?: string | null
           govt_id_file?: string | null
           id: string
           offers_home_visits?: boolean | null
@@ -149,7 +165,7 @@ export type Database = {
           role?: string | null
           services_offered?: string[] | null
           status?: string | null
-          updated_at?: string
+          updated_at?: string | null
           years_experience?: number | null
         }
         Update: {
@@ -158,9 +174,9 @@ export type Database = {
           career_motivation?: string | null
           certification_files?: string[] | null
           city?: string | null
-          created_at?: string
+          created_at?: string | null
           full_name?: string
-          gender?: Database["public"]["Enums"]["gender_type"] | null
+          gender?: string | null
           govt_id_file?: string | null
           id?: string
           offers_home_visits?: boolean | null
@@ -169,16 +185,16 @@ export type Database = {
           role?: string | null
           services_offered?: string[] | null
           status?: string | null
-          updated_at?: string
+          updated_at?: string | null
           years_experience?: number | null
         }
         Relationships: []
       }
       training_sessions: {
         Row: {
-          amount: number
-          created_at: string
-          duration_minutes: number
+          amount: number | null
+          created_at: string | null
+          duration_minutes: number | null
           id: string
           mode: string
           notes: string | null
@@ -186,13 +202,13 @@ export type Database = {
           session_type: string
           status: string | null
           trainer_id: string
-          updated_at: string
+          updated_at: string | null
           user_id: string
         }
         Insert: {
-          amount?: number
-          created_at?: string
-          duration_minutes?: number
+          amount?: number | null
+          created_at?: string | null
+          duration_minutes?: number | null
           id?: string
           mode: string
           notes?: string | null
@@ -200,13 +216,13 @@ export type Database = {
           session_type: string
           status?: string | null
           trainer_id: string
-          updated_at?: string
+          updated_at?: string | null
           user_id: string
         }
         Update: {
-          amount?: number
-          created_at?: string
-          duration_minutes?: number
+          amount?: number | null
+          created_at?: string | null
+          duration_minutes?: number | null
           id?: string
           mode?: string
           notes?: string | null
@@ -214,96 +230,116 @@ export type Database = {
           session_type?: string
           status?: string | null
           trainer_id?: string
-          updated_at?: string
+          updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "training_sessions_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_interests: {
         Row: {
-          created_at: string
+          created_at: string | null
           id: string
           message: string | null
           status: string | null
           trainer_id: string
-          updated_at: string
+          updated_at: string | null
           user_id: string
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           id?: string
           message?: string | null
           status?: string | null
           trainer_id: string
-          updated_at?: string
+          updated_at?: string | null
           user_id: string
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           id?: string
           message?: string | null
           status?: string | null
           trainer_id?: string
-          updated_at?: string
+          updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_interests_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_interests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_profiles: {
         Row: {
           age: number | null
           city: string | null
-          created_at: string
-          experience_level:
-            | Database["public"]["Enums"]["experience_level"]
-            | null
+          created_at: string | null
+          experience_level: string | null
           fitness_goals: string[] | null
           full_name: string
-          gender: Database["public"]["Enums"]["gender_type"] | null
+          gender: string | null
           health_conditions: string | null
           id: string
           phone: string | null
           preferred_workout_type: string | null
-          time_preference: Database["public"]["Enums"]["time_preference"] | null
-          updated_at: string
+          time_preference: string | null
+          updated_at: string | null
         }
         Insert: {
           age?: number | null
           city?: string | null
-          created_at?: string
-          experience_level?:
-            | Database["public"]["Enums"]["experience_level"]
-            | null
+          created_at?: string | null
+          experience_level?: string | null
           fitness_goals?: string[] | null
           full_name: string
-          gender?: Database["public"]["Enums"]["gender_type"] | null
+          gender?: string | null
           health_conditions?: string | null
           id: string
           phone?: string | null
           preferred_workout_type?: string | null
-          time_preference?:
-            | Database["public"]["Enums"]["time_preference"]
-            | null
-          updated_at?: string
+          time_preference?: string | null
+          updated_at?: string | null
         }
         Update: {
           age?: number | null
           city?: string | null
-          created_at?: string
-          experience_level?:
-            | Database["public"]["Enums"]["experience_level"]
-            | null
+          created_at?: string | null
+          experience_level?: string | null
           fitness_goals?: string[] | null
           full_name?: string
-          gender?: Database["public"]["Enums"]["gender_type"] | null
+          gender?: string | null
           health_conditions?: string | null
           id?: string
           phone?: string | null
           preferred_workout_type?: string | null
-          time_preference?:
-            | Database["public"]["Enums"]["time_preference"]
-            | null
-          updated_at?: string
+          time_preference?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }

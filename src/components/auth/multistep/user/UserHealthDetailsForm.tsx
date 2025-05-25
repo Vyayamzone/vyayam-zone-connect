@@ -13,13 +13,19 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const formSchema = z.object({
   healthConditions: z.string().optional(),
   experienceLevel: z.string().min(1, 'Please select your experience level'),
-  city: z.string().min(1, 'City is required'),
-  phone: z.string().min(10, 'Phone number must be at least 10 digits'),
+  city: z.string().min(2, 'City is required'),
+  phone: z.string().min(10, 'Please enter a valid phone number'),
 });
 
 interface UserHealthDetailsFormProps {
@@ -33,9 +39,9 @@ interface UserHealthDetailsFormProps {
 const UserHealthDetailsForm = ({ 
   formData, 
   updateFormData, 
-  onPrev,
-  onSubmit,
-  isSubmitting
+  onPrev, 
+  onSubmit, 
+  isSubmitting 
 }: UserHealthDetailsFormProps) => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -56,49 +62,22 @@ const UserHealthDetailsForm = ({
     <div className="w-full">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-center">Health & Contact Details</h2>
-        <p className="text-center text-gray-600">Just a few more details to complete your profile</p>
+        <p className="text-center text-gray-600">Final step to complete your profile</p>
       </div>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
           <FormField
             control={form.control}
-            name="city"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>City/Location</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter your city" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="phone"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Phone Number</FormLabel>
-                <FormControl>
-                  <Input type="tel" placeholder="Enter your phone number" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
             name="healthConditions"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Any health conditions or limitations? (optional)</FormLabel>
+                <FormLabel>Health Conditions or Limitations (Optional)</FormLabel>
                 <FormControl>
                   <Textarea 
-                    placeholder="E.g., back pain, knee issues, asthma, etc."
-                    {...field}
+                    placeholder="Any injuries, medical conditions, or physical limitations we should know about..."
+                    className="min-h-[100px]"
+                    {...field} 
                   />
                 </FormControl>
                 <FormMessage />
@@ -110,45 +89,64 @@ const UserHealthDetailsForm = ({
             control={form.control}
             name="experienceLevel"
             render={({ field }) => (
-              <FormItem className="space-y-3">
-                <FormLabel>What's your fitness experience level?</FormLabel>
-                <FormControl>
-                  <RadioGroup
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    className="flex flex-col space-y-1"
-                  >
-                    <FormItem className="flex items-center space-x-3 space-y-0">
-                      <FormControl>
-                        <RadioGroupItem value="beginner" />
-                      </FormControl>
-                      <FormLabel className="font-normal">Beginner</FormLabel>
-                    </FormItem>
-                    <FormItem className="flex items-center space-x-3 space-y-0">
-                      <FormControl>
-                        <RadioGroupItem value="intermediate" />
-                      </FormControl>
-                      <FormLabel className="font-normal">Intermediate</FormLabel>
-                    </FormItem>
-                    <FormItem className="flex items-center space-x-3 space-y-0">
-                      <FormControl>
-                        <RadioGroupItem value="advanced" />
-                      </FormControl>
-                      <FormLabel className="font-normal">Advanced</FormLabel>
-                    </FormItem>
-                  </RadioGroup>
-                </FormControl>
+              <FormItem>
+                <FormLabel>Experience Level</FormLabel>
+                <Select 
+                  onValueChange={field.onChange} 
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select your fitness experience level" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="beginner">Beginner (0-6 months)</SelectItem>
+                    <SelectItem value="intermediate">Intermediate (6 months - 2 years)</SelectItem>
+                    <SelectItem value="advanced">Advanced (2+ years)</SelectItem>
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
           />
 
-          <div className="flex justify-between pt-4">
-            <Button type="button" variant="outline" onClick={onPrev}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="city"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>City</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter your city" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter your phone number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="flex gap-4 pt-4">
+            <Button type="button" variant="outline" onClick={onPrev} className="flex-1">
               Previous
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Creating Account...' : 'Create Account'}
+            <Button type="submit" disabled={isSubmitting} className="flex-1">
+              {isSubmitting ? 'Creating Account...' : 'Complete Signup'}
             </Button>
           </div>
         </form>

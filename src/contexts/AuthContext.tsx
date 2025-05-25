@@ -139,6 +139,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signup = async (email: string, password: string, userData: any) => {
     setIsLoading(true);
     try {
+      console.log('Starting signup process with data:', userData);
+      
       // Register the user with Supabase Auth
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -152,14 +154,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
+        console.error('Supabase auth signup error:', error);
         throw error;
       }
 
       if (data.user) {
+        console.log('User created successfully:', data.user.id);
+        
         // Create profile based on role
         if (userData.role === 'user') {
+          console.log('Creating user profile...');
           await createUserProfile(data.user.id, userData);
         } else if (userData.role === 'trainer') {
+          console.log('Creating trainer profile...');
           await createTrainerProfile(data.user.id, userData);
         }
 
@@ -178,6 +185,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
     } catch (error: any) {
+      console.error('Signup error:', error);
       toast({
         variant: 'destructive',
         title: 'Signup failed',
@@ -190,35 +198,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const createUserProfile = async (userId: string, userData: any) => {
     try {
+      console.log('Creating user profile with data:', userData);
+      
+      const profileData = {
+        id: userId,
+        full_name: userData.fullName,
+        age: parseInt(userData.age) || null,
+        gender: userData.gender || null,
+        phone: userData.phone || null,
+        city: userData.city || null,
+        fitness_goals: userData.fitnessGoals || [],
+        preferred_workout_type: userData.preferredWorkoutType || null,
+        time_preference: userData.timePreference || null,
+        health_conditions: userData.healthConditions || null,
+        experience_level: userData.experienceLevel || null
+      };
+
+      console.log('Inserting user profile data:', profileData);
+
       const { error } = await supabase
         .from('user_profiles')
-        .insert({
-          id: userId,
-          full_name: userData.fullName,
-          age: userData.age,
-          gender: userData.gender,
-          phone: userData.phone,
-          city: userData.city,
-          fitness_goals: userData.fitnessGoals,
-          preferred_workout_type: userData.preferredWorkoutType,
-          time_preference: userData.timePreference,
-          health_conditions: userData.healthConditions,
-          experience_level: userData.experienceLevel
-        });
+        .insert(profileData);
 
       if (error) {
         console.error('Error creating user profile:', error);
+        throw error;
       }
+      
+      console.log('User profile created successfully');
     } catch (error) {
       console.error('Error in createUserProfile:', error);
+      throw error;
     }
   };
 
   const createTrainerProfile = async (userId: string, userData: any) => {
     try {
+      console.log('Creating trainer profile with data:', userData);
+      
       // Upload certification files if provided
       let certificationUrls: string[] = [];
       if (userData.certificationFiles && userData.certificationFiles.length > 0) {
+        console.log('Uploading certification files...');
         certificationUrls = await Promise.all(
           userData.certificationFiles.map(async (file: File) => {
             const path = `${userId}/${file.name}`;
@@ -239,6 +260,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Upload govt ID file if provided
       let govtIdUrl = '';
       if (userData.govtIdFile) {
+        console.log('Uploading government ID file...');
         const path = `${userId}/${userData.govtIdFile.name}`;
         const { data, error } = await supabase.storage
           .from('trainer_ids')
@@ -249,32 +271,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
 
+      const profileData = {
+        id: userId,
+        full_name: userData.fullName,
+        age: parseInt(userData.age) || null,
+        gender: userData.gender || null,
+        phone: userData.phone || null,
+        city: userData.city || null,
+        services_offered: userData.servicesOffered || [],
+        years_experience: parseFloat(userData.yearsExperience) || null,
+        career_motivation: userData.careerMotivation || null,
+        certification_files: certificationUrls.length > 0 ? certificationUrls : null,
+        govt_id_file: govtIdUrl || null,
+        availability_timings: userData.availabilityTimings || [],
+        offers_home_visits: userData.offersHomeVisits || false,
+        offers_online_sessions: userData.offersOnlineSessions || false,
+        status: 'pending' // Set initial status as pending
+      };
+
+      console.log('Inserting trainer profile data:', profileData);
+
       // Create trainer profile with pending status
       const { error } = await supabase
         .from('trainer_profiles')
-        .insert({
-          id: userId,
-          full_name: userData.fullName,
-          age: userData.age,
-          gender: userData.gender,
-          phone: userData.phone,
-          city: userData.city,
-          services_offered: userData.servicesOffered,
-          years_experience: userData.yearsExperience,
-          career_motivation: userData.careerMotivation,
-          certification_files: certificationUrls.length > 0 ? certificationUrls : null,
-          govt_id_file: govtIdUrl || null,
-          availability_timings: userData.availabilityTimings,
-          offers_home_visits: userData.offersHomeVisits,
-          offers_online_sessions: userData.offersOnlineSessions,
-          status: 'pending' // Set initial status as pending
-        });
+        .insert(profileData);
 
       if (error) {
         console.error('Error creating trainer profile:', error);
+        throw error;
       }
+      
+      console.log('Trainer profile created successfully');
     } catch (error) {
       console.error('Error in createTrainerProfile:', error);
+      throw error;
     }
   };
 
