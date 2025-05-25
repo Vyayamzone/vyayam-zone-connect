@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { supabase } from '@/integrations/supabase/client';
 
 const formSchema = z.object({
   // Basic Information
@@ -76,7 +77,6 @@ const timingOptions = [
 const TrainerSignupForm = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { signup } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -103,17 +103,123 @@ const TrainerSignupForm = () => {
     console.log('Trainer signup form values:', values);
     
     try {
-      await signup(values.email, values.password, {
-        ...values,
-        role: 'trainer',
-        age: parseInt(values.age),
-        yearsExperience: parseFloat(values.yearsExperience),
-      });
+      // First, check if user already exists
+      const { data: existingUser } = await supabase.auth.getUser();
       
+      let userId = '';
+      
+      if (existingUser?.user) {
+        // User is already authenticated, use their ID
+        userId = existingUser.user.id;
+        console.log('Using existing user ID:', userId);
+      } else {
+        // Try to sign up new user
+        const { data: signupData, error: signupError } = await supabase.auth.signUp({
+          email: values.email,
+          password: values.password,
+          options: {
+            data: {
+              full_name: values.fullName,
+              role: 'trainer',
+            },
+          }
+        });
+
+        if (signupError) {
+          if (signupError.message === 'User already registered') {
+            // User exists but not logged in, try to sign in
+            const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+              email: values.email,
+              password: values.password,
+            });
+            
+            if (loginError) {
+              throw new Error('This email is already registered with a different password. Please try logging in instead.');
+            }
+            
+            userId = loginData.user?.id || '';
+          } else {
+            throw signupError;
+          }
+        } else {
+          userId = signupData.user?.id || '';
+        }
+      }
+
+      if (!userId) {
+        throw new Error('Failed to get user ID');
+      }
+
+      console.log('Creating trainer profile for user ID:', userId);
+
+      // Check if trainer profile already exists
+      const { data: existingProfile } = await supabase
+        .from('trainer_profiles')
+        .select('id')
+        .eq('id', userId)
+        .single();
+
+      if (existingProfile) {
+        // Update existing profile
+        const { error: updateError } = await supabase
+          .from('trainer_profiles')
+          .update({
+            full_name: values.fullName,
+            age: parseInt(values.age),
+            gender: values.gender,
+            phone: values.phone,
+            city: values.city,
+            services_offered: values.servicesOffered,
+            years_experience: parseFloat(values.yearsExperience),
+            career_motivation: values.careerMotivation,
+            availability_timings: values.availabilityTimings,
+            offers_home_visits: values.offersHomeVisits,
+            offers_online_sessions: values.offersOnlineSessions,
+            status: 'pending',
+            role: 'trainer'
+          })
+          .eq('id', userId);
+
+        if (updateError) {
+          console.error('Error updating trainer profile:', updateError);
+          throw updateError;
+        }
+      } else {
+        // Create new profile
+        const { error: insertError } = await supabase
+          .from('trainer_profiles')
+          .insert({
+            id: userId,
+            full_name: values.fullName,
+            age: parseInt(values.age),
+            gender: values.gender,
+            phone: values.phone,
+            city: values.city,
+            services_offered: values.servicesOffered,
+            years_experience: parseFloat(values.yearsExperience),
+            career_motivation: values.careerMotivation,
+            availability_timings: values.availabilityTimings,
+            offers_home_visits: values.offersHomeVisits,
+            offers_online_sessions: values.offersOnlineSessions,
+            status: 'pending',
+            role: 'trainer'
+          });
+
+        if (insertError) {
+          console.error('Error creating trainer profile:', insertError);
+          throw insertError;
+        }
+      }
+
+      console.log('Trainer profile created/updated successfully');
+
       toast({
         title: 'Account created successfully!',
         description: 'Your trainer application has been submitted for review.',
       });
+
+      // Navigate to pending trainer dashboard
+      navigate('/pending-trainer-dashboard');
       
     } catch (error: any) {
       console.error('Trainer signup error:', error);
@@ -128,10 +234,10 @@ const TrainerSignupForm = () => {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
-      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-8 text-white">
+    <div className="w-full max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div className="bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 p-8 text-white">
         <h2 className="text-3xl font-bold text-center mb-2">Become a VyayamZone Trainer</h2>
-        <p className="text-center text-purple-100">Join our community of fitness professionals</p>
+        <p className="text-center text-blue-100">Join our community of fitness professionals</p>
       </div>
 
       <div className="p-8">
@@ -139,8 +245,8 @@ const TrainerSignupForm = () => {
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
             {/* Basic Information Section */}
             <div className="space-y-6">
-              <div className="border-l-4 border-purple-500 pl-4">
-                <h3 className="text-xl font-semibold text-gray-800 mb-4">Basic Information</h3>
+              <div className="border-l-4 border-blue-500 pl-4 bg-blue-50 py-2 rounded-r-lg">
+                <h3 className="text-xl font-semibold text-gray-800">Basic Information</h3>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -153,7 +259,7 @@ const TrainerSignupForm = () => {
                       <FormControl>
                         <Input 
                           placeholder="Enter your full name" 
-                          className="border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                          className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 h-12"
                           {...field} 
                         />
                       </FormControl>
@@ -172,7 +278,7 @@ const TrainerSignupForm = () => {
                         <Input 
                           type="email" 
                           placeholder="you@example.com" 
-                          className="border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                          className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 h-12"
                           {...field} 
                         />
                       </FormControl>
@@ -191,7 +297,7 @@ const TrainerSignupForm = () => {
                         <Input 
                           type="password" 
                           placeholder="Create a password" 
-                          className="border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                          className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 h-12"
                           {...field} 
                         />
                       </FormControl>
@@ -210,7 +316,7 @@ const TrainerSignupForm = () => {
                         <Input 
                           type="number" 
                           placeholder="Enter your age" 
-                          className="border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                          className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 h-12"
                           {...field} 
                         />
                       </FormControl>
@@ -230,7 +336,7 @@ const TrainerSignupForm = () => {
                         value={field.value}
                       >
                         <FormControl>
-                          <SelectTrigger className="border-gray-300 focus:border-purple-500 focus:ring-purple-500">
+                          <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 h-12">
                             <SelectValue placeholder="Select gender" />
                           </SelectTrigger>
                         </FormControl>
@@ -256,7 +362,7 @@ const TrainerSignupForm = () => {
                         <Input 
                           type="tel" 
                           placeholder="Enter your phone number" 
-                          className="border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                          className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 h-12"
                           {...field} 
                         />
                       </FormControl>
@@ -274,7 +380,7 @@ const TrainerSignupForm = () => {
                       <FormControl>
                         <Input 
                           placeholder="Enter your city" 
-                          className="border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                          className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 h-12"
                           {...field} 
                         />
                       </FormControl>
@@ -293,7 +399,7 @@ const TrainerSignupForm = () => {
                         <Input 
                           type="number" 
                           placeholder="Enter years of experience" 
-                          className="border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                          className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 h-12"
                           {...field} 
                         />
                       </FormControl>
@@ -306,8 +412,8 @@ const TrainerSignupForm = () => {
 
             {/* Services Offered Section */}
             <div className="space-y-6">
-              <div className="border-l-4 border-indigo-500 pl-4">
-                <h3 className="text-xl font-semibold text-gray-800 mb-4">Services Offered</h3>
+              <div className="border-l-4 border-purple-500 pl-4 bg-purple-50 py-2 rounded-r-lg">
+                <h3 className="text-xl font-semibold text-gray-800">Services Offered</h3>
               </div>
 
               <FormField
@@ -326,7 +432,7 @@ const TrainerSignupForm = () => {
                             return (
                               <FormItem
                                 key={option.id}
-                                className="flex flex-row items-start space-x-3 space-y-0 p-3 border border-gray-200 rounded-lg hover:border-purple-300 transition-colors"
+                                className="flex flex-row items-start space-x-3 space-y-0 p-3 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all cursor-pointer"
                               >
                                 <FormControl>
                                   <Checkbox
@@ -341,7 +447,7 @@ const TrainerSignupForm = () => {
                                     }}
                                   />
                                 </FormControl>
-                                <FormLabel className="font-normal text-sm">
+                                <FormLabel className="font-normal text-sm cursor-pointer">
                                   {option.label}
                                 </FormLabel>
                               </FormItem>
@@ -358,8 +464,8 @@ const TrainerSignupForm = () => {
 
             {/* Availability & Credentials Section */}
             <div className="space-y-6">
-              <div className="border-l-4 border-green-500 pl-4">
-                <h3 className="text-xl font-semibold text-gray-800 mb-4">Availability & Credentials</h3>
+              <div className="border-l-4 border-green-500 pl-4 bg-green-50 py-2 rounded-r-lg">
+                <h3 className="text-xl font-semibold text-gray-800">Availability & Credentials</h3>
               </div>
 
               <FormField
@@ -371,7 +477,7 @@ const TrainerSignupForm = () => {
                     <FormControl>
                       <Textarea 
                         placeholder="Tell us about your passion for fitness and why you want to help others achieve their goals..."
-                        className="min-h-[120px] border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                        className="min-h-[120px] border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                         {...field} 
                       />
                     </FormControl>
@@ -396,7 +502,7 @@ const TrainerSignupForm = () => {
                             return (
                               <FormItem
                                 key={option.id}
-                                className="flex flex-row items-start space-x-3 space-y-0 p-3 border border-gray-200 rounded-lg hover:border-purple-300 transition-colors"
+                                className="flex flex-row items-start space-x-3 space-y-0 p-3 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all cursor-pointer"
                               >
                                 <FormControl>
                                   <Checkbox
@@ -411,7 +517,7 @@ const TrainerSignupForm = () => {
                                     }}
                                   />
                                 </FormControl>
-                                <FormLabel className="font-normal text-sm">
+                                <FormLabel className="font-normal text-sm cursor-pointer">
                                   {option.label}
                                 </FormLabel>
                               </FormItem>
@@ -430,7 +536,7 @@ const TrainerSignupForm = () => {
                   control={form.control}
                   name="offersHomeVisits"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-4 border border-gray-200 rounded-lg">
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                       <FormControl>
                         <Checkbox
                           checked={field.value}
@@ -438,7 +544,7 @@ const TrainerSignupForm = () => {
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <FormLabel className="font-medium">
+                        <FormLabel className="font-medium cursor-pointer">
                           I offer home visits
                         </FormLabel>
                         <p className="text-sm text-gray-600">
@@ -453,7 +559,7 @@ const TrainerSignupForm = () => {
                   control={form.control}
                   name="offersOnlineSessions"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-4 border border-gray-200 rounded-lg">
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                       <FormControl>
                         <Checkbox
                           checked={field.value}
@@ -461,7 +567,7 @@ const TrainerSignupForm = () => {
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <FormLabel className="font-medium">
+                        <FormLabel className="font-medium cursor-pointer">
                           I offer online sessions
                         </FormLabel>
                         <p className="text-sm text-gray-600">
@@ -478,11 +584,11 @@ const TrainerSignupForm = () => {
               <Button 
                 type="submit" 
                 disabled={isSubmitting} 
-                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-[1.02]"
+                className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-xl h-14 text-lg"
               >
                 {isSubmitting ? (
                   <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
                     Creating Your Account...
                   </div>
                 ) : (
@@ -490,10 +596,10 @@ const TrainerSignupForm = () => {
                 )}
               </Button>
               
-              <div className="text-center mt-4">
+              <div className="text-center mt-6">
                 <p className="text-sm text-gray-600">
                   Already have an account?{' '}
-                  <a href="/auth" className="text-purple-600 hover:text-purple-700 font-medium hover:underline">
+                  <a href="/auth" className="text-blue-600 hover:text-blue-700 font-medium hover:underline transition-colors">
                     Log in instead
                   </a>
                 </p>
