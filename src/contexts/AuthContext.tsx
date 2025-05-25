@@ -41,6 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // First set up the auth listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
+        console.log('Auth state change:', event, currentSession?.user?.email);
         setSession(currentSession);
         if (currentSession?.user) {
           // Detect role based on email and profile presence
@@ -107,6 +108,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data.user) {
+        // Wait a moment for the auth state change to process
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         // Detect role and redirect
         const roleResult = await detectUserRole(email);
         
@@ -126,6 +130,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
     } catch (error: any) {
+      console.error('Login error:', error);
       toast({
         variant: 'destructive',
         title: 'Login failed',
@@ -161,6 +166,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data.user) {
         console.log('User created successfully:', data.user.id);
         
+        // Wait a moment for auth to settle
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         // Create profile based on role
         if (userData.role === 'user') {
           console.log('Creating user profile...');
@@ -169,6 +177,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('Creating trainer profile...');
           await createTrainerProfile(data.user.id, userData);
         }
+
+        // Wait for profile creation to complete
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
         toast({
           title: 'Account created',

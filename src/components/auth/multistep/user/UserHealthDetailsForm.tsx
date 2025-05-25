@@ -54,6 +54,7 @@ const UserHealthDetailsForm = ({
   });
 
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
+    console.log('UserHealthDetailsForm values:', values);
     updateFormData(values);
     onSubmit();
   };
@@ -90,10 +91,10 @@ const UserHealthDetailsForm = ({
             name="experienceLevel"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Experience Level</FormLabel>
+                <FormLabel>Experience Level *</FormLabel>
                 <Select 
                   onValueChange={field.onChange} 
-                  defaultValue={field.value}
+                  value={field.value}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -117,7 +118,7 @@ const UserHealthDetailsForm = ({
               name="city"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>City</FormLabel>
+                  <FormLabel>City *</FormLabel>
                   <FormControl>
                     <Input placeholder="Enter your city" {...field} />
                   </FormControl>
@@ -131,9 +132,13 @@ const UserHealthDetailsForm = ({
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone Number</FormLabel>
+                  <FormLabel>Phone Number *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter your phone number" {...field} />
+                    <Input 
+                      placeholder="Enter your phone number" 
+                      type="tel"
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

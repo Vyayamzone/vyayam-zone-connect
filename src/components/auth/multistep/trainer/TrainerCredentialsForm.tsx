@@ -109,6 +109,8 @@ const TrainerCredentialsForm = ({
   };
 
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
+    console.log('TrainerCredentialsForm values:', values);
+    
     // Check required files
     if (certFiles.length === 0) {
       setFileError('Please upload at least one certification document');
@@ -121,12 +123,14 @@ const TrainerCredentialsForm = ({
     }
     
     // Update form data with file information
-    updateFormData({
+    const formDataWithFiles = {
       ...values,
       certificationFiles: certFiles,
       govtIdFile: govtIdFile,
-    });
+    };
     
+    console.log('Final trainer form data:', formDataWithFiles);
+    updateFormData(formDataWithFiles);
     onSubmit();
   };
 
@@ -144,7 +148,7 @@ const TrainerCredentialsForm = ({
             name="phone"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Phone Number</FormLabel>
+                <FormLabel>Phone Number *</FormLabel>
                 <FormControl>
                   <Input type="tel" placeholder="Enter your phone number" {...field} />
                 </FormControl>
@@ -158,7 +162,7 @@ const TrainerCredentialsForm = ({
             name="careerMotivation"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>What inspires you as a fitness professional?</FormLabel>
+                <FormLabel>What inspires you as a fitness professional? *</FormLabel>
                 <FormControl>
                   <Textarea 
                     placeholder="Tell us about your journey and motivation..."
@@ -173,7 +177,7 @@ const TrainerCredentialsForm = ({
 
           <div className="space-y-4">
             <div>
-              <FormLabel>Upload Your Certifications</FormLabel>
+              <FormLabel>Upload Your Certifications *</FormLabel>
               <FormDescription>
                 Please upload relevant fitness certifications (PDF, JPG, PNG)
               </FormDescription>
@@ -205,7 +209,7 @@ const TrainerCredentialsForm = ({
             </div>
 
             <div>
-              <FormLabel>Government ID</FormLabel>
+              <FormLabel>Government ID *</FormLabel>
               <FormDescription>
                 Please upload a government issued ID (Aadhar, PAN, Driver's License)
               </FormDescription>
@@ -244,7 +248,7 @@ const TrainerCredentialsForm = ({
             render={() => (
               <FormItem>
                 <div className="mb-4">
-                  <FormLabel className="text-base">When are you available to train clients?</FormLabel>
+                  <FormLabel className="text-base">When are you available to train clients? *</FormLabel>
                   <p className="text-sm text-gray-500">Select all that apply</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
